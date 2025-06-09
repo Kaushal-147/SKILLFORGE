@@ -22,13 +22,15 @@ function Navbar() {
   };
 
   const handleLogout = () => {
-    logout();
+    
     setShowLogoutModal(true);
+    logout();
   };
 
   const handleModalOk = () => {
-    setShowLogoutModal(false);
+     setShowLogoutModal(false);
     navigate('/');
+   
   };
 
   useEffect(() => {

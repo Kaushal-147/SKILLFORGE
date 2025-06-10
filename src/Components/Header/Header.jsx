@@ -42,6 +42,7 @@ function Navbar() {
   }, [showLogoutModal]);
 
   const updateSlider = () => {
+
   const path = location.pathname;
   
   // Remove slider ONLY on /login or /signup
@@ -66,6 +67,7 @@ function Navbar() {
     });
   }
 };
+
 
 
   useEffect(() => {

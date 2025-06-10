@@ -14,8 +14,8 @@ function Navbar() {
   const instructor = isInstructor() || user?.role === 'instructor';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  let sliderRef = useRef(null);
-  let [sliderStyle, setSliderStyle] = useState({});
+  const sliderRef = useRef(null);
+  const [sliderStyle, setSliderStyle] = useState({});
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -24,13 +24,11 @@ function Navbar() {
   const handleLogout = () => {
     logout();
     setShowLogoutModal(true);
-  
   };
 
   const handleModalOk = () => {
     setShowLogoutModal(false);
     navigate('/');
-   
   };
 
   useEffect(() => {
@@ -42,39 +40,40 @@ function Navbar() {
   }, [showLogoutModal]);
 
   const updateSlider = () => {
+    requestAnimationFrame(() => {
+      const path = location.pathname;
 
-  const path = location.pathname;
-  
-  // Remove slider ONLY on /login or /signup
-  if (path === '/login' || path === '/signup') {
-    setSliderStyle({});
-    return;
-  }
+      if (path === '/login' || path === '/signup') {
+        setSliderStyle({});
+        return;
+      }
 
-  const activeEl = document.querySelector('.nav-link.active');
-  if (activeEl && sliderRef.current) {
-    const rect = activeEl.getBoundingClientRect();
-    const parentRect = activeEl.parentElement.getBoundingClientRect();
-    setSliderStyle({
-      left: `${rect.left - parentRect.left}px`,
-      width: `${rect.width}px`,
-      transition: 'all 0.3s ease',
-      position: 'absolute',
-      bottom: '-2px',
-      height: '2px',
-      backgroundColor: '#0040c1',
-      borderRadius: '2px',
+      const activeEl = document.querySelector('.nav-link.active');
+      if (activeEl && sliderRef.current) {
+        const rect = activeEl.getBoundingClientRect();
+        const parentRect = activeEl.parentElement.getBoundingClientRect();
+
+        setSliderStyle({
+          left: `${rect.left - parentRect.left}px`,
+          width: `${rect.width}px`,
+          transition: 'all 0.3s ease',
+          position: 'absolute',
+          bottom: '-2px',
+          height: '2px',
+          backgroundColor: '#0040c1',
+          borderRadius: '2px',
+        });
+      }
     });
-  }
-};
+  };
 
 
 
   useEffect(() => {
-   requestAnimationFrame(updateSlider);
-  }, [location.pathname]);
+  requestAnimationFrame(updateSlider);
+}, [location.pathname]);
 
-  
+
 
 
   return (

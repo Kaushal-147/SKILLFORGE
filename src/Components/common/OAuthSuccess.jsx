@@ -8,13 +8,12 @@ const OAuthSuccess = () => {
 
     if (token) {
       localStorage.setItem('token', token);
-      localStorage.setItem('oauthRedirect', 'true'); // Trigger slider recalculation
+      
 
-      const cleanPath = redirectPath.startsWith('http')
-        ? new URL(redirectPath).pathname
-        : redirectPath;
+      const cleanPath = redirectPath;
 
       const currentDomain = window.location.origin;
+      console.log(currentDomain, cleanPath);
       const fullRedirectUrl = `${currentDomain}${cleanPath}`;
 
       window.location.href = fullRedirectUrl;

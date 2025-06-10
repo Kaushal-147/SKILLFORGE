@@ -75,12 +75,16 @@ function Navbar() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (localStorage.getItem('oauthRedirect') === 'true') {
-      
-      setTimeout(updateSlider, 100);
-      localStorage.removeItem('oauthRedirect');
-    }
-  }, []);
+  if (localStorage.getItem('oauthRedirect') === 'true') {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        updateSlider();
+        localStorage.removeItem('oauthRedirect');
+      }, 0);
+    });
+  }
+}, []);
+
 
   return (
     <div>

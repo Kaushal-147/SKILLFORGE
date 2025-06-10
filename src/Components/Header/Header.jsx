@@ -78,7 +78,7 @@ function Navbar() {
     if (localStorage.getItem('oauthRedirect') === 'true') {
       
       setTimeout(updateSlider, 100);
-      localStorage.removeItem('oauthRedirect'); // Clear the flag after processing
+     
     }
   }, []);
 

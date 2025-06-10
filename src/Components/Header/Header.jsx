@@ -15,7 +15,13 @@ function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const sliderRef = useRef(null);
-  const [sliderStyle, setSliderStyle] = useState({});
+  const navLinksRef = useRef(null);
+  const [sliderStyle, setSliderStyle] = useState({
+    left: '0px',
+    width: '0px',
+    opacity: 0,
+    backgroundColor: '#0040c1'
+  });
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -42,39 +48,64 @@ function Navbar() {
   const updateSlider = () => {
     requestAnimationFrame(() => {
       const path = location.pathname;
-
+      
+      // Hide slider for auth pages
       if (path === '/login' || path === '/signup') {
-        setSliderStyle({});
+        setSliderStyle(prev => ({
+          ...prev,
+          opacity: 0,
+          transition: 'opacity 0.2s ease, width 0.3s ease'
+        }));
         return;
       }
 
-      const activeEl = document.querySelector('.nav-link.active');
-      if (activeEl && sliderRef.current) {
-        const rect = activeEl.getBoundingClientRect();
-        const parentRect = activeEl.parentElement.getBoundingClientRect();
-
-        setSliderStyle({
-          left: `${rect.left - parentRect.left}px`,
-          width: `${rect.width}px`,
-          transition: 'all 0.3s ease',
-          position: 'absolute',
-          bottom: '-2px',
-          height: '2px',
-          backgroundColor: '#0040c1',
-          borderRadius: '2px',
-        });
+      const activeEl = navLinksRef.current?.querySelector('.nav-link.active');
+      
+      if (!activeEl) {
+        // No active link found
+        setSliderStyle(prev => ({
+          ...prev,
+          opacity: 0,
+          transition: 'opacity 0.2s ease, width 0.3s ease'
+        }));
+        return;
       }
+
+      const rect = activeEl.getBoundingClientRect();
+      const parentRect = navLinksRef.current.getBoundingClientRect();
+      const left = rect.left - parentRect.left;
+      const width = rect.width;
+
+      setSliderStyle({
+        left: `${left}px`,
+        width: `${width}px`,
+        opacity: 1,
+        transition: 'all 0.3s ease',
+        position: 'absolute',
+        bottom: '-2px',
+        height: '2px',
+        backgroundColor: darkMode ? '#3a86ff' : '#0040c1',
+        borderRadius: '2px',
+      });
     });
   };
 
-
-
   useEffect(() => {
-  requestAnimationFrame(updateSlider);
-}, [location.pathname]);
+    updateSlider();
+    
+    const handleResize = () => {
+      updateSlider();
+    };
 
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [location.pathname, darkMode]);
 
-
+  // Handle initial render and mobile menu toggling
+  useEffect(() => {
+    const timer = setTimeout(updateSlider, 50);
+    return () => clearTimeout(timer);
+  }, [isMobileMenuOpen]);
 
   return (
     <div>
@@ -89,7 +120,11 @@ function Navbar() {
             <span className="logo-text">SKILLFORGE</span>
           </div>
 
-          <div className="nav-links desktop-nav-links" style={{ position: 'relative' }}>
+          <div 
+            className="nav-links desktop-nav-links" 
+            style={{ position: 'relative' }}
+            ref={navLinksRef}
+          >
             <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Home
             </NavLink>

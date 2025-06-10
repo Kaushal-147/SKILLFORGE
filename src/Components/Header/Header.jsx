@@ -71,16 +71,10 @@ function Navbar() {
 
 
   useEffect(() => {
-    updateSlider();
+   requestAnimationFrame(updateSlider);
   }, [location.pathname]);
 
-  useEffect(() => {
-    if (localStorage.getItem('oauthRedirect') === 'true') {
-      
-      setTimeout(updateSlider, 100);
-     
-    }
-  }, []);
+  
 
 
   return (

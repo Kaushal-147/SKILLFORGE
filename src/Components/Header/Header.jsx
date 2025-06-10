@@ -22,15 +22,13 @@ function Navbar() {
   };
 
   const handleLogout = () => {
-    
-    setShowLogoutModal(true);
     logout();
+    setShowLogoutModal(true);
   };
 
   const handleModalOk = () => {
-     setShowLogoutModal(false);
+    setShowLogoutModal(false);
     navigate('/');
-   
   };
 
   useEffect(() => {
@@ -42,33 +40,42 @@ function Navbar() {
   }, [showLogoutModal]);
 
   const updateSlider = () => {
-    const activeEl = document.querySelector('.nav-link.active');
-    if (activeEl && sliderRef.current) {
-      const rect = activeEl.getBoundingClientRect();
-      const parentRect = activeEl.parentElement.getBoundingClientRect();
-      setSliderStyle({
-        left: `${rect.left - parentRect.left}px`,
-        width: `${rect.width}px`,
-        transition: 'all 0.3s ease',
-        position: 'absolute',
-        bottom: '-2px',
-        height: '2px',
-        backgroundColor: '#0040c1',
-        borderRadius: '2px',
-      });
-    }
+    requestAnimationFrame(() => {
+      let path = location.pathname;
+
+      if (path === '/login' || path === '/signup') {
+        setSliderStyle({});
+        return;
+      }
+
+      const activeEl = document.querySelector('.nav-link.active');
+      if (activeEl && sliderRef.current) {
+        const rect = activeEl.getBoundingClientRect();
+        const parentRect = activeEl.parentElement.getBoundingClientRect();
+
+        setSliderStyle({
+          left: `${rect.left - parentRect.left}px`,
+          width: `${rect.width}px`,
+          transition: 'all 0.3s ease',
+          position: 'absolute',
+          bottom: '-2px',
+          height: '2px',
+          backgroundColor: '#0040c1',
+          borderRadius: '2px',
+        });
+      }
+    });
   };
 
-  useEffect(() => {
-    updateSlider();
-  }, [location.pathname]);
+
 
   useEffect(() => {
-    if (localStorage.getItem('oauthRedirect') === 'true') {
-      localStorage.removeItem('oauthRedirect');
-      setTimeout(updateSlider, 100);
-    }
-  }, []);
+    // Modified useEffect hook
+    
+      requestAnimationFrame(updateSlider);
+    
+  }, [location.pathname, user]);
+
 
   return (
     <div>

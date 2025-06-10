@@ -24,22 +24,16 @@ export default function InstructorDashboard() {
         const response = await getInstructorCourses();
         const instructorCourses = response || [];
         setCourses(instructorCourses);
-        
-        // Calculate dashboard statistics
+
         if (instructorCourses.length > 0) {
-          //console.log('Instructor courses with enrollment data:', instructorCourses);
-          
-          // Calculate total students using the new enrollmentStats field
           const totalStudents = instructorCourses.reduce(
             (total, course) => total + (course.enrollmentStats?.count || 0), 0
           );
-          
-          //console.log('Total students enrolled across all courses:', totalStudents);
-          
+
           const totalLessons = instructorCourses.reduce(
             (total, course) => total + (course.lessons?.length || 0), 0
           );
-          
+
           const averageCompletion = instructorCourses.reduce(
             (sum, course) => {
               const courseProgress = course.enrolledStudents?.reduce(
@@ -48,7 +42,7 @@ export default function InstructorDashboard() {
               return sum + (courseProgress / (course.enrolledStudents?.length || 1));
             }, 0
           ) / (instructorCourses.length || 1);
-          
+
           setStats({
             totalCourses: instructorCourses.length,
             totalStudents,
@@ -64,18 +58,18 @@ export default function InstructorDashboard() {
       }
     };
 
-    // Check both user object and localStorage for role
-    const storedRole = localStorage.getItem('userRole');
+    // ✅ Check if the user is an instructor (from context or localStorage)
+    const storedRole = localStorage.getItem('role');
     const isInstructorUser = user?.role === 'instructor' || storedRole === 'instructor';
-    
-    if (user && isInstructorUser) {
-      //console.log('Fetching instructor courses for', user.name, 'with role:', user.role);
+
+    if (isInstructorUser) {
       fetchCourses();
     } else {
-      
+      // Not an instructor, stop loading and optionally redirect
       setIsLoading(false);
+      // navigate('/dashboard'); // Optional: redirect if unauthorized
     }
-  }, [user]);
+  }, [user, navigate]);
 
   return (
     <div className="instructor-dashboard">
@@ -112,7 +106,7 @@ export default function InstructorDashboard() {
 
       <section className="courses-section">
         <h3>Your Courses</h3>
-        
+
         {isLoading ? (
           <div className="loading-indicator">Loading your courses...</div>
         ) : error ? (
@@ -142,7 +136,7 @@ export default function InstructorDashboard() {
                     <Link to={`/edit-course/${course._id}`} className="edit-course-btn">
                       Edit Course
                     </Link>
-                    <button 
+                    <button
                       className="view-stats-btn"
                       onClick={() => navigate('/instructor/stats-under-development')}
                     >

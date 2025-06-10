@@ -870,41 +870,77 @@ const BACKEND_URL = process.env.BACKEND_URL || (isProduction ? 'https://skillfor
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${BACKEND_URL}/api/auth/google/callback`
-}, async (accessToken, refreshToken, profile, done) => {
+  callbackURL: `${BACKEND_URL}/api/auth/google/callback`,
+  passReqToCallback: true, // to access query in callback
+}, async (req, accessToken, refreshToken, profile, done) => {
   try {
     const email = profile.emails[0].value;
     let user = await User.findOne({ email });
+
     if (!user) {
-      // Generate a hashed password from profile ID for OAuth users
+      // Sign up: Use role from req.query.state
+      const role = req.query.state || 'student';
+
       const hashedPassword = await bcrypt.hash(profile.id, 10);
-      user = new User({ name: profile.displayName, email, password: hashedPassword, role: 'student' });
+      user = new User({
+        name: profile.displayName,
+        email,
+        password: hashedPassword,
+        role,
+      });
+
       await user.save();
+      console.log('[OAuth SIGNUP] New user created with role:', role);
+    } else {
+      console.log('[OAuth LOGIN] Existing user found with role:', user.role);
     }
-    done(null, user);
+
+    return done(null, user);
   } catch (err) {
-    done(err, null);
+    return done(err, null);
   }
 }));
 
-// OAuth routes
-app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-app.get(
-  '/api/auth/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=oauth` }),
-  (req, res) => {
-    // Issue JWT
-    const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d', algorithm: 'HS256' });
-    // Determine frontend redirect based on role
+
+
+app.get('/api/auth/google', (req, res, next) => {
+  const role = req.query.role || 'student';
+  console.log('[OAuth INIT] Sending role via state:', role);
+
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    state: role
+  })(req, res, next);
+});
+
+
+
+// OAuth callback route
+app.get('/api/auth/google/callback',
+  passport.authenticate('google', {
+    session: false,
+    failureRedirect: `${FRONTEND_URL}/login?error=oauth`
+  }),
+  async (req, res) => {
+    console.log('[OAuth CALLBACK] Logged in as:', req.user.email);
+    console.log('[OAuth CALLBACK] User role from DB:', req.user.role);
+
+    const token = jwt.sign({
+      userId: req.user._id,
+      role: req.user.role
+    }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
     const redirectPath = req.user.role === 'instructor' ? '/instructor-dashboard' : '/dashboard';
-    // Redirect to OAuth success handler with token and path
-    res.redirect(
-      `${FRONTEND_URL}/oauth-success?token=${token}&redirectPath=${encodeURIComponent(redirectPath)}`
-    );
+
+    console.log('[OAuth CALLBACK] Redirecting to:', redirectPath);
+
+    res.redirect(`${FRONTEND_URL}/oauth-success?token=${token}&redirectPath=${encodeURIComponent(redirectPath)}`);
   }
 );
 
-// 404 handler
+
+
+// 404 Handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });

@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Login.css';
-// We'll use a regular image instead of SVG
-// You'll need to add the actual students image to your assets folder
 
 const Login = () => {
   const navigate = useNavigate();
   const { login, error: authError } = useAuth();
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,11 +30,10 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    
+
     try {
       const result = await login(formData.email, formData.password);
       const path = result.redirectPath || '/dashboard';
-      //console.log(`Redirecting user to ${path} based on role: ${result.user?.role}`);
       setRedirectPath(path);
       setShowSuccessModal(true);
     } catch (err) {
@@ -62,7 +59,6 @@ const Login = () => {
   return (
     <>
       <div className="min-h-screen flex login-page-container">
-        {/* Left side - Login Form */}
         <div className="flex-1 flex items-center justify-center p-8 leftside">
           <div className="w-full max-w-md space-y-8">
             <div className="space-y-3">
@@ -82,28 +78,26 @@ const Login = () => {
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                     Email
                   </label>
-                  <div className="mt-1">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
                 </div>
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     Password
                   </label>
-                  <div className="mt-1 relative">
+                  <div className="relative">
                     <input
                       id="password"
                       name="password"
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       required
                       value={formData.password}
                       onChange={handleChange}
@@ -143,7 +137,7 @@ const Login = () => {
                 {isLoading ? 'Logging in...' : 'Login'}
               </button>
 
-              <div className="or mt-4 text-center text-sm text-gray-600 ">Or</div>
+              <div className="or mt-4 text-center text-sm text-gray-600">Or</div>
               <button
                 type="button"
                 onClick={() => window.location.href = '/api/auth/google'}
@@ -169,41 +163,32 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Right side - Welcome Banner */}
         <div className="hidden lg:block flex-1 bg-[#3A5BF3] text-white relative overflow-hidden">
           <div className="flex flex-col h-full items-center justify-center p-12">
-            {/* Text at the top */}
             <div className="text-center mb-8 z-10">
               <h2 className="text-4xl font-bold mb-4">Welcome</h2>
-             
             </div>
-            
-            {/* Image in the middle - smaller size */}
             <div className="flex justify-center items-center flex-grow z-10">
               <img 
                 src="/student-illustration.png" 
                 alt="Students celebrating" 
                 className="w-3/5 h-auto"
                 onError={(e) => {
-                  // Fallback if image not found
                   e.target.src = "https://placehold.co/600x400/3A5BF3/FFFFFF?text=Add+Your+Image";
                   e.target.onerror = null;
                 }}
               />
             </div>
-            
-            {/* Text at the bottom */}
             <div className="text-center mt-8 z-10">
               <p className="text-xl text-indigo-100">Login to access your account</p>
             </div>
-            
-            {/* Background light circle */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-96 h-96 rounded-full bg-[#3A5BF3] opacity-30"></div>
             </div>
           </div>
         </div>
       </div>
+
       {showSuccessModal && (
         <div className="logout-modal-overlay">
           <div className="logout-modal-content">

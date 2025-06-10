@@ -2,45 +2,39 @@ import React, { useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-// A wrapper for routes that should only be accessible to authenticated users
-// and optionally only to users with specific roles
 const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user, loading, isInstructor } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const hasInstructorRole = isInstructor();
+  // Read role from localStorage as fallback
+  const storedRole = localStorage.getItem('role');
+  const userRole = user?.role || storedRole;
+  const isInstructorUser = userRole === 'instructor';
 
-  // Handle role-based redirects
+  // Handle role-based redirects (once user is available or fallback role exists)
   useEffect(() => {
-    if (user && !loading) {
-      // If user is an instructor on the student dashboard, redirect to instructor dashboard
-      if (hasInstructorRole && location.pathname === '/dashboard') {
-        
+    if (!loading && userRole) {
+      if (isInstructorUser && location.pathname === '/dashboard') {
         navigate('/instructor-dashboard', { replace: true });
       }
-      
-      // If user is a student on the instructor dashboard, redirect to student dashboard
-      if (!hasInstructorRole && location.pathname === '/instructor-dashboard') {
-       
+
+      if (!isInstructorUser && location.pathname === '/instructor-dashboard') {
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [user, loading, hasInstructorRole, location.pathname, navigate]);
+  }, [userRole, loading, location.pathname, navigate, isInstructorUser]);
 
-  // Role synchronization effect
+  // Sync role to localStorage for global access
   useEffect(() => {
-    if (user?.role && localStorage.getItem('userRole') !== user.role) {
-      
-      localStorage.setItem('userRole', user.role);
-      window.dispatchEvent(new CustomEvent('role:update', { 
-        detail: { role: user.role }
-      }));
+    if (userRole && localStorage.getItem('role') !== userRole) {
+      localStorage.setItem('role', userRole);
+      window.dispatchEvent(new CustomEvent('role:update', { detail: { role: userRole } }));
     }
-  }, [user?.role]);
+  }, [userRole]);
 
+  // Loading state
   if (loading) {
-    // Show loading state while checking authentication
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
@@ -48,21 +42,18 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     );
   }
 
-  // If no user is logged in, redirect to login page
-  if (!user) {
+  // Not logged in
+  if (!user && !storedRole) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If a specific role is required, check if user has that role
-  if (requiredRole === 'instructor' && !hasInstructorRole) {
-    // Redirect to dashboard if trying to access instructor-only pages
-    
+  // Role restriction (e.g. instructor-only route)
+  if (requiredRole === 'instructor' && userRole !== 'instructor') {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If authenticated and role requirements are met, render the children
+  // Authorized
   return children;
 };
-
 
 export default ProtectedRoute;

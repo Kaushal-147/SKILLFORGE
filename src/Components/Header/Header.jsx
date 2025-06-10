@@ -76,8 +76,9 @@ function Navbar() {
 
   useEffect(() => {
     if (localStorage.getItem('oauthRedirect') === 'true') {
-      localStorage.removeItem('oauthRedirect');
+      
       setTimeout(updateSlider, 100);
+      localStorage.removeItem('oauthRedirect');
     }
   }, []);
 

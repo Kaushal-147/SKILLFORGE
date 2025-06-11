@@ -15,6 +15,7 @@ const Signup = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [redirectPath, setRedirectPath] = useState('/dashboard');
   const [modalStage, setModalStage] = useState('loading');
+  const [isOAuthLoading, setIsOAuthLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -72,8 +73,10 @@ const Signup = () => {
   }, [showSuccessModal]);
 
   const handleOAuthContinue = () => {
-    setShowOAuthRoleModal(false);
-    window.location.href = `/api/auth/google?role=${selectedRole}`;
+    setIsOAuthLoading(true);
+    setTimeout(() => {
+      window.location.href = `/api/auth/google?role=${selectedRole}`;
+    }, 800);
   };
 
   return (
@@ -283,49 +286,58 @@ const Signup = () => {
       {showOAuthRoleModal && (
         <div className="logout-modal-overlay">
           <div className="logout-modal-content">
-            <h3 className="text-lg font-medium mb-4">Select Account Type</h3>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="student-role"
-                  name="role"
-                  value="student"
-                  checked={selectedRole === 'student'}
-                  onChange={() => setSelectedRole('student')}
-                  className="h-4 w-4 text-indigo-600"
-                />
-                <label htmlFor="student-role" className="ml-3 text-sm font-medium text-gray-700">
-                  Student (I want to take courses)
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="instructor-role"
-                  name="role"
-                  value="instructor"
-                  checked={selectedRole === 'instructor'}
-                  onChange={() => setSelectedRole('instructor')}
-                  className="h-4 w-4 text-indigo-600"
-                />
-                <label htmlFor="instructor-role" className="ml-3 text-sm font-medium text-gray-700">
-                  Instructor (I want to create courses)
-                </label>
-              </div>
-            </div>
-            <button
-              className="logout-modal-ok-btn mt-6"
-              onClick={handleOAuthContinue}
-            >
-              Continue with Google
-            </button>
-            <button
-              className="logout-modal-ok-btn mt-4"
-              onClick={() => setShowOAuthRoleModal(false)}
-            >
-              Cancel
-            </button>
+            {isOAuthLoading ? (
+              <>
+                <div className="spinner" />
+                <p className="mt-4">Redirecting to Google...</p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Account Type</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="student-role"
+                      name="role"
+                      value="student"
+                      checked={selectedRole === 'student'}
+                      onChange={() => setSelectedRole('student')}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="student-role" className="ml-3 text-sm text-gray-700">
+                      Student (I want to take courses)
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="instructor-role"
+                      name="role"
+                      value="instructor"
+                      checked={selectedRole === 'instructor'}
+                      onChange={() => setSelectedRole('instructor')}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="instructor-role" className="ml-3 text-sm text-gray-700">
+                      Instructor (I want to create courses)
+                    </label>
+                  </div>
+                </div>
+                <button
+                  className="logout-modal-ok-btn mt-6"
+                  onClick={handleOAuthContinue}
+                >
+                  Continue with Google
+                </button>
+                <button
+                  className="logout-modal-ok-btn mt-4 bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  onClick={() => setShowOAuthRoleModal(false)}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

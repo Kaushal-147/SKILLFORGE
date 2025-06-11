@@ -40,42 +40,58 @@ function Navbar() {
   }, [showLogoutModal]);
 
   const updateSlider = () => {
-    requestAnimationFrame(() => {
-      let path = location.pathname;
-
-      if (path === '/login' || path === '/signup') {
-        setSliderStyle({});
-        return;
-      }
-
-      const activeEl = document.querySelector('.nav-link.active');
-      if (activeEl && sliderRef.current) {
-        const rect = activeEl.getBoundingClientRect();
-        const parentRect = activeEl.parentElement.getBoundingClientRect();
-
-        setSliderStyle({
-          left: `${rect.left - parentRect.left}px`,
-          width: `${rect.width}px`,
-          transition: 'all 0.3s ease',
-          position: 'absolute',
-          bottom: '-2px',
-          height: '2px',
-          backgroundColor: '#0040c1',
-          borderRadius: '2px',
-        });
-      }
-    });
+    const activeEl = document.querySelector('.nav-link.active');
+    if (activeEl && sliderRef.current) {
+      const rect = activeEl.getBoundingClientRect();
+      const parentRect = activeEl.parentElement.getBoundingClientRect();
+      setSliderStyle({
+        left: `${rect.left - parentRect.left}px`,
+        width: `${rect.width}px`,
+        transition: 'all 0.3s ease',
+        position: 'absolute',
+        bottom: '-2px',
+        height: '2px',
+        backgroundColor: '#0040c1',
+        borderRadius: '2px',
+        opacity: 1,
+      });
+    } else {
+      setSliderStyle({ opacity: 0, width: 0 });
+    }
   };
 
-
+  useEffect(() => {
+    setTimeout(updateSlider, 50);
+  }, [location.pathname]);
 
   useEffect(() => {
-    // Modified useEffect hook
-    
-      requestAnimationFrame(updateSlider);
-    
-  }, [location.pathname, user]);
+    if (localStorage.getItem('oauthRedirect') === 'true') {
+      localStorage.removeItem('oauthRedirect');
+      setTimeout(() => {
+        updateSlider();
+      }, 300);
+    }
+  }, [user]);
 
+  useEffect(() => {
+    if (user) {
+      setTimeout(updateSlider, 100);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      setTimeout(updateSlider, 100);
+    }
+  }, [isMobileMenuOpen]);
+
+  const isDashboardActive =
+    location.pathname.startsWith('/dashboard') ||
+    location.pathname.startsWith('/instructor-dashboard');
 
   return (
     <div>
@@ -94,19 +110,22 @@ function Navbar() {
             <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Home
             </NavLink>
+
             {!instructor && (
               <NavLink to="/courses" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Courses
               </NavLink>
             )}
+
             {user && (
               <NavLink
                 to={instructor ? '/instructor-dashboard' : '/dashboard'}
-                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+                className={({ isActive }) => (isActive || isDashboardActive ? 'nav-link active' : 'nav-link')}
               >
                 Dashboard
               </NavLink>
             )}
+
             <NavLink to="/about" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               About
             </NavLink>
@@ -170,7 +189,11 @@ function Navbar() {
             </NavLink>
           )}
           {user && (
-            <NavLink to={instructor ? '/instructor-dashboard' : '/dashboard'} className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={toggleMobileMenu}>
+            <NavLink
+              to={instructor ? '/instructor-dashboard' : '/dashboard'}
+              className={({ isActive }) => (isActive || isDashboardActive ? 'nav-link active' : 'nav-link')}
+              onClick={toggleMobileMenu}
+            >
               Dashboard
             </NavLink>
           )}

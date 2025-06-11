@@ -7,25 +7,24 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Read role from localStorage as fallback
+  // Get stored role from localStorage if user is not yet loaded
   const storedRole = localStorage.getItem('role');
   const userRole = user?.role || storedRole;
   const isInstructorUser = userRole === 'instructor';
 
-  // Handle role-based redirects (once user is available or fallback role exists)
+  // Redirect user to correct dashboard (only on root dashboards)
   useEffect(() => {
     if (!loading && userRole) {
-      if (isInstructorUser && location.pathname === '/dashboard') {
+      if (location.pathname === '/dashboard' && isInstructorUser) {
         navigate('/instructor-dashboard', { replace: true });
       }
-
-      if (!isInstructorUser && location.pathname === '/instructor-dashboard') {
+      if (location.pathname === '/instructor-dashboard' && !isInstructorUser) {
         navigate('/dashboard', { replace: true });
       }
     }
   }, [userRole, loading, location.pathname, navigate, isInstructorUser]);
 
-  // Sync role to localStorage for global access
+  // Sync user role to localStorage for persistence across refreshes
   useEffect(() => {
     if (userRole && localStorage.getItem('role') !== userRole) {
       localStorage.setItem('role', userRole);
@@ -33,7 +32,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     }
   }, [userRole]);
 
-  // Loading state
+  // While loading auth state
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -47,12 +46,12 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Role restriction (e.g. instructor-only route)
-  if (requiredRole === 'instructor' && userRole !== 'instructor') {
+  // Restrict access based on required role
+  if (!loading && requiredRole === 'instructor' && userRole !== 'instructor') {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Authorized
+  // Authorized → render protected content
   return children;
 };
 

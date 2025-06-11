@@ -6,24 +6,30 @@ import { useTheme } from '../../context/ThemeContext';
 
 function Navbar() {
   const { darkMode, setDarkMode } = useTheme();
-  const location = useLocation();
   const { user, logout, isInstructor } = useAuth();
+  const instructor = isInstructor() || user?.role === 'instructor';
+  const location = useLocation();
   const navigate = useNavigate();
+
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [modalStage, setModalStage] = useState('loading');
-  const instructor = isInstructor() || user?.role === 'instructor';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   const sliderRef = useRef(null);
-  const [sliderStyle, setSliderStyle] = useState({});
+  const [sliderStyle, setSliderStyle] = useState({ opacity: 0 });
+
+  const isDashboardActive =
+    location.pathname.startsWith('/dashboard') ||
+    location.pathname.startsWith('/instructor-dashboard');
 
   const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+    setIsMobileMenuOpen(prev => !prev);
   };
 
   const handleLogout = () => {
     logout();
     setShowLogoutModal(true);
+    setSliderStyle({ opacity: 0 });
+    setIsMobileMenuOpen(false);
   };
 
   const handleModalOk = () => {
@@ -31,17 +37,9 @@ function Navbar() {
     navigate('/');
   };
 
-  useEffect(() => {
-    if (showLogoutModal) {
-      setModalStage('loading');
-      const timer = setTimeout(() => setModalStage('success'), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [showLogoutModal]);
-
   const updateSlider = () => {
     const activeEl = document.querySelector('.nav-link.active');
-    if (activeEl && sliderRef.current) {
+    if (activeEl && sliderRef.current && activeEl.offsetWidth > 0) {
       const rect = activeEl.getBoundingClientRect();
       const parentRect = activeEl.parentElement.getBoundingClientRect();
       setSliderStyle({
@@ -55,48 +53,68 @@ function Navbar() {
         borderRadius: '2px',
         opacity: 1,
       });
-    } else {
-      setSliderStyle({ opacity: 0, width: 0 });
+    } else if (location.pathname === '/login' || location.pathname === '/signup') {
+      setSliderStyle({ opacity: 0 });
     }
   };
 
+  // Update slider on location change
   useEffect(() => {
-    setTimeout(updateSlider, 50);
+    const waitForActive = () => {
+      const activeEl = document.querySelector('.nav-link.active');
+      if (activeEl) {
+        updateSlider();
+      } else {
+        setTimeout(waitForActive, 25);
+      }
+    };
+    waitForActive();
   }, [location.pathname]);
 
+  // Update on window resize
+  useEffect(() => {
+    const handleResize = () => requestAnimationFrame(updateSlider);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // OAuth redirect logic
   useEffect(() => {
     if (localStorage.getItem('oauthRedirect') === 'true') {
       localStorage.removeItem('oauthRedirect');
-      setTimeout(() => {
-        updateSlider();
-      }, 300);
+      setTimeout(updateSlider, 10);
     }
+  }, []);
+
+  // Update slider after user login
+  useEffect(() => {
+    if (user) setTimeout(updateSlider, 50);
   }, [user]);
 
+  // Logout modal stages
   useEffect(() => {
-    if (user) {
-      setTimeout(updateSlider, 100);
+    if (showLogoutModal) {
+      setModalStage('loading');
+      const timer = setTimeout(() => setModalStage('success'), 1000);
+      return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [showLogoutModal]);
 
+  // Prevent body scroll on mobile menu open
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (!isMobileMenuOpen) {
-      setTimeout(updateSlider, 100);
-    }
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
   }, [isMobileMenuOpen]);
 
-  const isDashboardActive =
-    location.pathname.startsWith('/dashboard') ||
-    location.pathname.startsWith('/instructor-dashboard');
+  const handleMobileLinkClick = () => {
+    toggleMobileMenu();
+    updateSlider();
+  };
 
   return (
     <div>
       <nav className={`navbar${darkMode ? ' dark-navbar' : ''}`}>
         <div className="nav-content">
+          {/* Logo */}
           <div className="logo-group">
             {darkMode ? (
               <div className="logo-circle-dark font-bold">SF</div>
@@ -106,17 +124,16 @@ function Navbar() {
             <span className="logo-text">SKILLFORGE</span>
           </div>
 
+          {/* Desktop Links */}
           <div className="nav-links desktop-nav-links" style={{ position: 'relative' }}>
             <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Home
             </NavLink>
-
             {!instructor && (
               <NavLink to="/courses" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Courses
               </NavLink>
             )}
-
             {user && (
               <NavLink
                 to={instructor ? '/instructor-dashboard' : '/dashboard'}
@@ -125,24 +142,21 @@ function Navbar() {
                 Dashboard
               </NavLink>
             )}
-
             <NavLink to="/about" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               About
             </NavLink>
-
             <div ref={sliderRef} style={sliderStyle} />
           </div>
 
+          {/* Actions */}
           <div className="nav-actions">
             <div className="nav-actions-row desktop-only-actions">
               <div
                 className={`toggle-switch${darkMode ? ' toggled' : ''}`}
                 onClick={() => setDarkMode(prev => !prev)}
-                title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                aria-label="Toggle dark mode"
               >
                 <div className="toggle-track">
-                  <div className="toggle-thumb"></div>
+                  <div className="toggle-thumb" />
                 </div>
                 <span className="toggle-label">{darkMode ? 'Dark' : 'Light'}</span>
               </div>
@@ -155,36 +169,35 @@ function Navbar() {
               )}
             </div>
 
+            {/* Mobile controls */}
             <div className="mobile-nav-bar-controls">
               <div
                 className={`toggle-switch mobile-header-toggle${darkMode ? ' toggled' : ''}`}
                 onClick={() => setDarkMode(prev => !prev)}
-                title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                aria-label="Toggle dark mode"
               >
                 <div className="toggle-track">
-                  <div className="toggle-thumb"></div>
+                  <div className="toggle-thumb" />
                 </div>
               </div>
               <button
                 className={`hamburger-menu${isMobileMenuOpen ? ' open' : ''}`}
                 onClick={toggleMobileMenu}
-                aria-label="Toggle navigation menu"
               >
-                <span className="hamburger-bar"></span>
-                <span className="hamburger-bar"></span>
-                <span className="hamburger-bar"></span>
+                <span className="hamburger-bar" />
+                <span className="hamburger-bar" />
+                <span className="hamburger-bar" />
               </button>
             </div>
           </div>
         </div>
 
+        {/* Mobile Nav Links */}
         <div className={`mobile-nav-links${darkMode ? ' dark-mode' : ''}${isMobileMenuOpen ? ' open' : ''}`}>
-          <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={toggleMobileMenu}>
+          <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={handleMobileLinkClick}>
             Home
           </NavLink>
           {!instructor && (
-            <NavLink to="/courses" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={toggleMobileMenu}>
+            <NavLink to="/courses" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={handleMobileLinkClick}>
               Courses
             </NavLink>
           )}
@@ -192,18 +205,17 @@ function Navbar() {
             <NavLink
               to={instructor ? '/instructor-dashboard' : '/dashboard'}
               className={({ isActive }) => (isActive || isDashboardActive ? 'nav-link active' : 'nav-link')}
-              onClick={toggleMobileMenu}
+              onClick={handleMobileLinkClick}
             >
               Dashboard
             </NavLink>
           )}
-          <NavLink to="/about" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={toggleMobileMenu}>
+          <NavLink to="/about" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={handleMobileLinkClick}>
             About
           </NavLink>
-
           <div className="mobile-actions-wrapper">
             {user ? (
-              <button className="login-btn mobile-logout-btn" onClick={() => { handleLogout(); toggleMobileMenu(); }}>
+              <button className="login-btn mobile-logout-btn" onClick={handleLogout}>
                 Logout
               </button>
             ) : location.pathname === '/login' ? (
@@ -215,6 +227,7 @@ function Navbar() {
         </div>
       </nav>
 
+      {/* Logout Modal */}
       {showLogoutModal && (
         <div className="logout-modal-overlay">
           <div className="logout-modal-content">
